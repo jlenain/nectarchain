@@ -23,12 +23,12 @@ from ctapipe.core.traits import (
 )
 from ctapipe.io import HDF5TableWriter
 from ctapipe.io.datawriter import DATA_MODEL_VERSION
+from ctapipe_io_nectarcam import LightNectarCAMEventSource
 from tables.exceptions import HDF5ExtError
 from tqdm.auto import tqdm
 from traitlets import default
 
 from ..data import DataManagement
-from ..data.container import LightNectarCAMEventSource
 from ..data.container.core import NectarCAMContainer, TriggerMapContainer
 from ..utils import ComponentUtils
 from .component import *
@@ -217,7 +217,7 @@ class EventsLoopNectarCAMCalibrationTool(BaseNectarCAMCalibrationTool):
                 output_component_kwargs[key] = getattr(self, key)
         return output_component_kwargs
 
-    def _init_writer(self, sliced: bool = False, slice_index: int = 0, group_name = None):
+    def _init_writer(self, sliced: bool = False, slice_index: int = 0, group_name=None):
         if hasattr(self, "writer"):
             self.writer.close()
 

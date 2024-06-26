@@ -6,7 +6,6 @@ from .core import (
     get_array_keys,
     merge_map_ArrayDataContainer,
 )
-from .eventSource import *
 from .gainContainer import *
-from .waveformsContainer import *
 from .pedestalContainer import *
+from .waveformsContainer import *
