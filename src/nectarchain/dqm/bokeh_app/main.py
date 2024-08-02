@@ -1,5 +1,5 @@
 import numpy as np
-from app_hooks import get_rundata, make_camera_displays
+from app_hooks import NOTINDISPLAY, get_rundata, make_camera_displays
 
 # bokeh imports
 from bokeh.layouts import layout, row
@@ -12,13 +12,6 @@ from ctapipe.instrument import CameraGeometry
 from ctapipe_io_nectarcam import constants
 
 from nectarchain.dqm.db_utils import DQMDB
-
-NOTINDISPLAY = [
-    "Results_TriggerStatistics",
-    "Results_MeanWaveForms_HighGain",
-    "Results_MeanWaveForms_LowGain",
-    "Results_CameraMonitoring",
-]
 
 geom = CameraGeometry.from_name("NectarCam-003")
 geom = geom.transform_to(EngineeringCameraFrame())
