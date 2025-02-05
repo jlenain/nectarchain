@@ -20,11 +20,11 @@ dependencies:
   - lmfit # needed into TRR
   - h5py # needed into TRR (should be removed to use I/O methods of containers)
   - pyqt # [linux]
+  - pyside6 # [osx and arm64]
+  - pyqtgraph
   - pip:
     - zeo
     - zodb
     - mechanize
     - browser-cookie3
-    - pyqtgraph
-    - pyqt6 # [osx and arm64]
     - sphinx-qt-documentation
