@@ -19,8 +19,7 @@ dependencies:
   - pydata-sphinx-theme
   - lmfit # needed into TRR
   - h5py # needed into TRR (should be removed to use I/O methods of containers)
-  - pyqt # [linux]
-  - pyside6 # [osx and arm64]
+  - pyqt
   - pyqtgraph
   - pip:
     - zeo
