@@ -1,11 +1,11 @@
 import re
 
 import numpy as np
-from app_hooks import TEST_PATTERN, get_rundata, make_camera_displays
+from app_hooks import TEST_PATTERN, get_rundata, make_camera_displays, make_timelines
 
 # bokeh imports
 from bokeh.layouts import layout, row
-from bokeh.models import Select  # , NumericInput
+from bokeh.models import Panel, Select, Tabs  # , NumericInput
 from bokeh.plotting import curdoc
 
 # ctapipe imports
@@ -56,6 +56,12 @@ def update_camera_displays(attr, old, new):
                 # displays[parentkey][childkey].datasource.stream(image)
 
 
+def update_timelines(attr, old, new):
+    runid = run_select.value
+    new_rundata = get_rundata(db, runid)
+    make_timelines(db, new_rundata, runid)
+
+
 print("Opening connection to ZODB")
 db = DQMDB(read_only=True).root
 print("Getting list of run numbers")
@@ -66,7 +72,9 @@ runids = sorted(list(db.keys()), reverse=True)
 # VM (gets OoM killed)
 # run_dict_lengths = [len(db[r]) for r in runids]
 # runid = runids[np.argmax(run_dict_lengths)]
-runid = "NectarCAM_Run0008"
+
+# runid = "NectarCAM_Run0008"
+runid = runids[0]
 print(f"We will start with run {runid}")
 
 print("Defining Select")
@@ -76,8 +84,9 @@ run_select = Select(value=runid, title="NectarCAM run number", options=runids)
 print(f"Getting data for run {run_select.value}")
 source = get_rundata(db, run_select.value)
 displays = make_camera_displays(db, source, runid)
+timelines = make_timelines(db, source, runid)
 
-run_select.on_change("value", update_camera_displays)
+run_select.on_change("value", update_camera_displays, update_timelines)
 
 controls = row(run_select)
 
@@ -88,15 +97,34 @@ controls = row(run_select)
 # update_camera_displays(attr, old, new)
 
 ncols = 3
-plots = [
+camera_displays = [
     displays[parentkey][childkey].figure
     for parentkey in displays.keys()
     for childkey in displays[parentkey].keys()
 ]
-curdoc().add_root(
-    layout(
-        [[controls], [[plots[x : x + ncols] for x in range(0, len(plots), ncols)]]],
-        sizing_mode="scale_width",
-    )
+list_timelines = [
+    timelines
+    for parentkey in timelines.keys()
+    for childkey in timelines[parentkey].keys()
+]
+
+layout_camera_displays = layout(
+    [[camera_displays[x : x + ncols] for x in range(0, len(camera_displays), ncols)]],
+    sizing_mode="scale_width",
 )
+
+layout_timelines = layout(
+    [[list_timelines[x : x + ncols] for x in range(0, len(list_timelines), ncols)]],
+    sizing_mode="scale_width",
+)
+
+# Create different tabs
+tab_camera_displays = Panel(child=layout_camera_displays, title="Camera displays")
+tab_timelines = Panel(child=layout_timelines, title="Timelines")
+
+# Combine panels into tabs
+tabs = Tabs(tabs=[tab_camera_displays, tab_timelines])
+
+# Add to the Bokeh document
+curdoc().add_root(layout([controls, tabs]))
 curdoc().title = "NectarCAM Data Quality Monitoring web app"
