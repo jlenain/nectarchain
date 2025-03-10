@@ -4,7 +4,7 @@ import numpy as np
 from app_hooks import TEST_PATTERN, get_rundata, make_camera_displays, make_timelines
 
 # bokeh imports
-from bokeh.layouts import grid, layout, row
+from bokeh.layouts import gridplot, layout, row
 from bokeh.models import Panel, Select, Tabs  # , NumericInput
 from bokeh.plotting import curdoc
 
@@ -73,8 +73,8 @@ runids = sorted(list(db.keys()), reverse=True)
 # run_dict_lengths = [len(db[r]) for r in runids]
 # runid = runids[np.argmax(run_dict_lengths)]
 
-# runid = "NectarCAM_Run0008"
-runid = runids[0]
+runid = "NectarCAM_Run0008"
+# runid = runids[0]
 print(f"We will start with run {runid}")
 
 print("Defining Select")
@@ -108,12 +108,13 @@ list_timelines = [
     for childkey in timelines[parentkey].keys()
 ]
 
-layout_camera_displays = layout(
-    [[camera_displays[x : x + ncols] for x in range(0, len(camera_displays), ncols)]],
+layout_camera_displays = gridplot(
+    camera_displays,
     sizing_mode="scale_width",
+    ncols=ncols,
 )
 
-layout_timelines = grid(list_timelines, sizing_mode="scale_width", ncols=ncols)
+layout_timelines = gridplot(list_timelines, sizing_mode="scale_width", ncols=2)
 
 # Create different tabs
 tab_camera_displays = Panel(child=layout_camera_displays, title="Camera displays")

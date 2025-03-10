@@ -35,7 +35,10 @@ def make_timelines(db, source, runid):
             for childkey in db[runid][parentkey].keys():
                 print(f"Run id {runid} Preparing plot for {parentkey}, {childkey}")
                 timelines[parentkey][childkey] = figure(title=childkey)
-                timelines[parentkey][childkey].line(y=source[parentkey][childkey])
+                evts = np.arange(len(source[parentkey][childkey]))
+                timelines[parentkey][childkey].line(
+                    x=evts, y=source[parentkey][childkey]
+                )
     return dict(timelines)
 
 
