@@ -4,7 +4,7 @@ import numpy as np
 from app_hooks import TEST_PATTERN, get_rundata, make_camera_displays, make_timelines
 
 # bokeh imports
-from bokeh.layouts import layout, row
+from bokeh.layouts import grid, layout, row
 from bokeh.models import Panel, Select, Tabs  # , NumericInput
 from bokeh.plotting import curdoc
 
@@ -103,7 +103,7 @@ camera_displays = [
     for childkey in displays[parentkey].keys()
 ]
 list_timelines = [
-    timelines
+    timelines[parentkey][childkey]
     for parentkey in timelines.keys()
     for childkey in timelines[parentkey].keys()
 ]
@@ -113,10 +113,7 @@ layout_camera_displays = layout(
     sizing_mode="scale_width",
 )
 
-layout_timelines = layout(
-    [[list_timelines[x : x + ncols] for x in range(0, len(list_timelines), ncols)]],
-    sizing_mode="scale_width",
-)
+layout_timelines = grid(list_timelines, sizing_mode="scale_width", ncols=ncols)
 
 # Create different tabs
 tab_camera_displays = Panel(child=layout_camera_displays, title="Camera displays")

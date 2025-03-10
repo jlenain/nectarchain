@@ -31,7 +31,7 @@ def get_rundata(src, runid):
 def make_timelines(db, source, runid):
     timelines = collections.defaultdict(dict)
     for parentkey in db[runid].keys():
-        if re.match("(?:% s).*PIXTIMELINE-.*", parentkey):
+        if re.match("(?:.*PIXTIMELINE-.*)", parentkey):
             for childkey in db[runid][parentkey].keys():
                 print(f"Run id {runid} Preparing plot for {parentkey}, {childkey}")
                 timelines[parentkey][childkey] = figure(title=childkey)
