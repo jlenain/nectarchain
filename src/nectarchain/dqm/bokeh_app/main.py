@@ -1,17 +1,13 @@
-import re
-
-import numpy as np
-from app_hooks import TEST_PATTERN, get_rundata, make_camera_displays, make_timelines
+from app_hooks import get_rundata, make_camera_displays, make_timelines
 
 # bokeh imports
 from bokeh.layouts import gridplot, layout, row
-from bokeh.models import Panel, Select, Tabs  # , NumericInput
+from bokeh.models import ColumnDataSource, Panel, Select, Tabs  # , NumericInput
 from bokeh.plotting import curdoc
 
 # ctapipe imports
 from ctapipe.coordinates import EngineeringCameraFrame
 from ctapipe.instrument import CameraGeometry
-from ctapipe_io_nectarcam import constants
 
 from nectarchain.dqm.db_utils import DQMDB
 
@@ -22,44 +18,20 @@ geom = geom.transform_to(EngineeringCameraFrame())
 def update_camera_displays(attr, old, new):
     runid = run_select.value
     new_rundata = get_rundata(db, runid)
+    new_data = make_camera_displays(db, new_rundata, runid)
 
-    # Reset each display
-    for k in displays.keys():
-        for kk in displays[k].keys():
-            displays[k][kk].image = np.zeros(shape=constants.N_PIXELS)
+    # TODO: TRY TO USE `stream` INSTEAD, ON UPDATES:
+    # display.datasource.stream(new_data)
+    # displays[parentkey][childkey].datasource.stream(image)
 
-    for parentkey in db[runid].keys():
-        if not re.match(TEST_PATTERN, parentkey):
-            for childkey in db[runid][parentkey].keys():
-                print(f"Run id {runid} Updating plot for {parentkey}, {childkey}")
-
-                image = new_rundata[parentkey][childkey]
-                image = np.nan_to_num(image, nan=0.0)
-                try:
-                    displays[parentkey][childkey].image = image
-                except ValueError as e:
-                    print(
-                        f"Caught {type(e).__name__} for {childkey}, filling display"
-                        f"with zeros. Details: {e}"
-                    )
-                    image = np.zeros(shape=displays[parentkey][childkey].image.shape)
-                    displays[parentkey][childkey].image = image
-                except KeyError as e:
-                    print(
-                        f"Caught {type(e).__name__} for {childkey}, filling display"
-                        f"with zeros. Details: {e}"
-                    )
-                    image = np.zeros(shape=constants.N_PIXELS)
-                    displays[parentkey][childkey].image = image
-                # TODO: TRY TO USE `stream` INSTEAD, ON UPDATES:
-                # display.datasource.stream(new_data)
-                # displays[parentkey][childkey].datasource.stream(image)
+    source.stream(new_data)
 
 
 def update_timelines(attr, old, new):
     runid = run_select.value
     new_rundata = get_rundata(db, runid)
-    make_timelines(db, new_rundata, runid)
+    new_data = make_timelines(db, new_rundata, runid)
+    source.stream(new_data)
 
 
 print("Opening connection to ZODB")
@@ -82,7 +54,7 @@ print("Defining Select")
 run_select = Select(value=runid, title="NectarCAM run number", options=runids)
 
 print(f"Getting data for run {run_select.value}")
-source = get_rundata(db, run_select.value)
+source = ColumnDataSource(data=get_rundata(db, run_select.value))
 displays = make_camera_displays(db, source, runid)
 timelines = make_timelines(db, source, runid)
 

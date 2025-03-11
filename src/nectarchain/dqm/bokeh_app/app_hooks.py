@@ -24,7 +24,7 @@ geom = geom.transform_to(EngineeringCameraFrame())
 
 
 def get_rundata(src, runid):
-    run_data = src[runid]
+    run_data = dict(src[runid])
     return run_data
 
 
@@ -48,6 +48,8 @@ def make_camera_displays(db, source, runid):
         if not re.match(TEST_PATTERN, parentkey):
             for childkey in db[runid][parentkey].keys():
                 print(f"Run id {runid} Preparing plot for {parentkey}, {childkey}")
+                # Reset each display
+                displays[parentkey][childkey] = np.zeros(shape=constants.N_PIXELS)
                 displays[parentkey][childkey] = make_camera_display(
                     source, parent_key=parentkey, child_key=childkey
                 )
@@ -61,10 +63,18 @@ def make_camera_display(source, parent_key, child_key):
     display = CameraDisplay(geometry=geom)
     try:
         display.image = image
-    except ValueError:
+    except ValueError as e:
+        print(
+            f"Caught {type(e).__name__} for {child_key}, filling display"
+            f"with zeros. Details: {e}"
+        )
         image = np.zeros(shape=display.image.shape)
         display.image = image
-    except KeyError:
+    except KeyError as e:
+        print(
+            f"Caught {type(e).__name__} for {child_key}, filling display"
+            f"with zeros. Details: {e}"
+        )
         image = np.zeros(shape=constants.N_PIXELS)
         display.image = image
     display.add_colorbar()
