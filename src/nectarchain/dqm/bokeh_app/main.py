@@ -15,22 +15,17 @@ geom = CameraGeometry.from_name("NectarCam-003")
 geom = geom.transform_to(EngineeringCameraFrame())
 
 
-def update_camera_displays(attr, old, new):
+def update_data(attr, old, new):
     runid = run_select.value
     new_rundata = get_rundata(db, runid)
-    new_data = make_camera_displays(new_rundata, runid)
 
-    # TODO: TRY TO USE `stream` INSTEAD, ON UPDATES:
-    # display.datasource.stream(new_data)
-    # displays[parentkey][childkey].datasource.stream(image)
+    new_displays = make_camera_displays(new_rundata, runid, original_keys)
+    new_timelines = make_timelines(new_rundata, runid)
 
-    source.stream(new_data)
+    # Merging dictionaries
+    # (cf. https://www.geeksforgeeks.org/python-merging-two-dictionaries/):
+    new_data = new_displays | new_timelines
 
-
-def update_timelines(attr, old, new):
-    runid = run_select.value
-    new_rundata = get_rundata(db, runid)
-    new_data = make_timelines(new_rundata, runid)
     source.stream(new_data)
 
 
@@ -55,10 +50,16 @@ run_select = Select(value=runid, title="NectarCAM run number", options=runids)
 
 print(f"Getting data for run {run_select.value}")
 source = ColumnDataSource(data=get_rundata(db, run_select.value))
-displays = make_camera_displays(source, runid)
-timelines = make_timelines(source, runid)
+original_keys = list(source.data.keys())
 
-run_select.on_change("value", update_camera_displays, update_timelines)
+displays = make_camera_displays(
+    source=source.data,
+    runid=runid,
+    original_keys=original_keys,
+)
+timelines = make_timelines(source.data, runid)
+
+run_select.on_change("value", update_data)
 
 controls = row(run_select)
 
