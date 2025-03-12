@@ -26,6 +26,12 @@ def update_data(attr, old, new):
     # (cf. https://www.geeksforgeeks.org/python-merging-two-dictionaries/):
     new_data = new_displays | new_timelines
 
+    # Fill missing columns in new data with empty lists
+    for key in original_keys:
+        if key not in new_data:
+            new_data[key] = []
+
+    breakpoint()
     source.stream(new_data)
 
 
