@@ -2,7 +2,9 @@ from app_hooks import get_rundata, make_camera_displays, make_timelines
 
 # bokeh imports
 from bokeh.layouts import gridplot, layout, row
-from bokeh.models import ColumnDataSource, Panel, Select, Tabs  # , NumericInput
+
+# from bokeh.models import ColumnDataSource, Panel, Select, Tabs  # , NumericInput
+from bokeh.models import Panel, Select, Tabs  # , NumericInput
 from bokeh.plotting import curdoc
 
 # ctapipe imports
@@ -16,6 +18,9 @@ geom = geom.transform_to(EngineeringCameraFrame())
 
 
 def update_data(attr, old, new):
+    global displays
+    global timelines
+
     runid = run_select.value
     new_rundata = get_rundata(db, runid)
 
@@ -24,15 +29,16 @@ def update_data(attr, old, new):
 
     # Merging dictionaries
     # (cf. https://www.geeksforgeeks.org/python-merging-two-dictionaries/):
-    new_data = new_displays | new_timelines
+    # new_data = new_displays | new_timelines
 
     # Fill missing columns in new data with empty lists
-    for key in original_keys:
-        if key not in new_data:
-            new_data[key] = []
+    # for key in original_keys:
+    #    if key not in new_data:
+    #        new_data[key] = []
 
-    breakpoint()
-    source.stream(new_data)
+    displays = new_displays
+    timelines = new_timelines
+    # source.stream(new_data)
 
 
 print("Opening connection to ZODB")
@@ -55,15 +61,18 @@ print("Defining Select")
 run_select = Select(value=runid, title="NectarCAM run number", options=runids)
 
 print(f"Getting data for run {run_select.value}")
-source = ColumnDataSource(data=get_rundata(db, run_select.value))
-original_keys = list(source.data.keys())
+# source = ColumnDataSource(data=get_rundata(db, run_select.value))
+source = get_rundata(db, run_select.value)
+# original_keys = list(source.data.keys())
+original_keys = list(source.keys())
 
 displays = make_camera_displays(
-    source=source.data,
+    source=source,  # source.data
     runid=runid,
     original_keys=original_keys,
 )
-timelines = make_timelines(source.data, runid)
+# timelines = make_timelines(source.data, runid)
+timelines = make_timelines(source, runid)
 
 run_select.on_change("value", update_data)
 
@@ -76,8 +85,8 @@ controls = row(run_select)
 # update_camera_displays(attr, old, new)
 
 ncols = 3
-camera_displays = [displays[key].figure for key in displays.keys()]
-list_timelines = [timelines[key] for key in timelines.keys()]
+camera_displays = [displays[key].figure for key in displays]
+list_timelines = [timelines[key] for key in timelines]
 
 layout_camera_displays = gridplot(
     camera_displays,
