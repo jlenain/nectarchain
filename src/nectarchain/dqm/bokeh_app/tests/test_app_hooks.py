@@ -32,7 +32,7 @@ def test_make_camera_displays():
     from nectarchain.dqm.bokeh_app.app_hooks import make_camera_displays
 
     for runid in list(test_dict.keys()):
-        make_camera_displays(test_dict, test_dict[runid], runid)
+        make_camera_displays(test_dict[runid], runid)
 
 
 def test_bokeh(tmp_path):
@@ -51,7 +51,7 @@ def test_bokeh(tmp_path):
     run_select = Select(value=runid, title="NectarCAM run number", options=runids)
 
     source = get_rundata(root, run_select.value)
-    displays = make_camera_displays(root, source, runid)
+    displays = make_camera_displays(source, runid)
 
     ncols = 3
     plots = [

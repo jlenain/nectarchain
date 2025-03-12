@@ -18,7 +18,7 @@ geom = geom.transform_to(EngineeringCameraFrame())
 def update_camera_displays(attr, old, new):
     runid = run_select.value
     new_rundata = get_rundata(db, runid)
-    new_data = make_camera_displays(db, new_rundata, runid)
+    new_data = make_camera_displays(new_rundata, runid)
 
     # TODO: TRY TO USE `stream` INSTEAD, ON UPDATES:
     # display.datasource.stream(new_data)
@@ -30,7 +30,7 @@ def update_camera_displays(attr, old, new):
 def update_timelines(attr, old, new):
     runid = run_select.value
     new_rundata = get_rundata(db, runid)
-    new_data = make_timelines(db, new_rundata, runid)
+    new_data = make_timelines(new_rundata, runid)
     source.stream(new_data)
 
 
@@ -55,8 +55,8 @@ run_select = Select(value=runid, title="NectarCAM run number", options=runids)
 
 print(f"Getting data for run {run_select.value}")
 source = ColumnDataSource(data=get_rundata(db, run_select.value))
-displays = make_camera_displays(db, source, runid)
-timelines = make_timelines(db, source, runid)
+displays = make_camera_displays(source, runid)
+timelines = make_timelines(source, runid)
 
 run_select.on_change("value", update_camera_displays, update_timelines)
 
@@ -69,16 +69,8 @@ controls = row(run_select)
 # update_camera_displays(attr, old, new)
 
 ncols = 3
-camera_displays = [
-    displays[parentkey][childkey].figure
-    for parentkey in displays.keys()
-    for childkey in displays[parentkey].keys()
-]
-list_timelines = [
-    timelines[parentkey][childkey]
-    for parentkey in timelines.keys()
-    for childkey in timelines[parentkey].keys()
-]
+camera_displays = [displays[key].figure for key in displays.keys()]
+list_timelines = [timelines[key] for key in timelines.keys()]
 
 layout_camera_displays = gridplot(
     camera_displays,

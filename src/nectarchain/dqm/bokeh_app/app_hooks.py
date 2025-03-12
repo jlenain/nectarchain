@@ -1,4 +1,3 @@
-import collections
 import re
 
 import numpy as np
@@ -25,58 +24,59 @@ geom = geom.transform_to(EngineeringCameraFrame())
 
 def get_rundata(src, runid):
     run_data = dict(src[runid])
-    return run_data
+    items = []
+    # Flatten input dictionary
+    for parentkey, parentvalue in run_data.items():
+        for childkey, childvalue in parentvalue.items():
+            items.append((childkey, childvalue))
+
+    new_data = dict(items)
+    return new_data
 
 
-def make_timelines(db, source, runid):
-    timelines = collections.defaultdict(dict)
-    for parentkey in db[runid].keys():
-        if re.match("(?:.*PIXTIMELINE-.*)", parentkey):
-            for childkey in db[runid][parentkey].keys():
-                print(f"Run id {runid} Preparing plot for {parentkey}, {childkey}")
-                timelines[parentkey][childkey] = figure(title=childkey)
-                evts = np.arange(len(source[parentkey][childkey]))
-                timelines[parentkey][childkey].line(
-                    x=evts, y=source[parentkey][childkey]
-                )
-    return dict(timelines)
+def make_timelines(source, runid):
+    timelines = dict()
+    for key in source.data.keys():
+        if re.match("(?:.*PIXTIMELINE-.*)", key):
+            print(f"Run id {runid} Preparing plot for {key}")
+            timelines[key] = figure(title=key)
+            evts = np.arange(len(source[key]))
+            timelines[key].line(x=evts, y=source.data[key])
+    return timelines
 
 
-def make_camera_displays(db, source, runid):
-    displays = collections.defaultdict(dict)
-    for parentkey in db[runid].keys():
-        if not re.match(TEST_PATTERN, parentkey):
-            for childkey in db[runid][parentkey].keys():
-                print(f"Run id {runid} Preparing plot for {parentkey}, {childkey}")
-                # Reset each display
-                displays[parentkey][childkey] = np.zeros(shape=constants.N_PIXELS)
-                displays[parentkey][childkey] = make_camera_display(
-                    source, parent_key=parentkey, child_key=childkey
-                )
-    return dict(displays)
+def make_camera_displays(source, runid):
+    displays = dict()
+    for key in source.data.keys():
+        if not re.match(TEST_PATTERN, key):
+            print(f"Run id {runid} Preparing plot for {key}")
+            # Reset each display
+            displays[key] = np.zeros(shape=constants.N_PIXELS)
+            displays[key] = make_camera_display(source, key=key)
+    return displays
 
 
-def make_camera_display(source, parent_key, child_key):
+def make_camera_display(source, key):
     # Example camera display
-    image = source[parent_key][child_key]
+    image = source.data[key]
     image = np.nan_to_num(image, nan=0.0)
     display = CameraDisplay(geometry=geom)
     try:
         display.image = image
     except ValueError as e:
         print(
-            f"Caught {type(e).__name__} for {child_key}, filling display"
+            f"Caught {type(e).__name__} for {key}, filling display"
             f"with zeros. Details: {e}"
         )
         image = np.zeros(shape=display.image.shape)
         display.image = image
     except KeyError as e:
         print(
-            f"Caught {type(e).__name__} for {child_key}, filling display"
+            f"Caught {type(e).__name__} for {key}, filling display"
             f"with zeros. Details: {e}"
         )
         image = np.zeros(shape=constants.N_PIXELS)
         display.image = image
     display.add_colorbar()
-    display.figure.title = child_key
+    display.figure.title = key
     return display
