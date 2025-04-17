@@ -34,11 +34,11 @@ class PixelParticipationHighLowGain(DQMSummary):
         self.BadPixels_ped = np.zeros(self.Pix)
         self.BadPixels = np.zeros(self.Pix)
 
-        self.camera = Reader1.subarray.tel[0].camera.geometry.transform_to(
+        self.camera = Reader1.tel[0].subarray.camera.geometry.transform_to(
             EngineeringCameraFrame()
         )
 
-        self.camera2 = Reader1.subarray.tel[0].camera.geometry.transform_to(
+        self.camera2 = Reader1.tel[0].subarray.camera.geometry.transform_to(
             EngineeringCameraFrame()
         )
 

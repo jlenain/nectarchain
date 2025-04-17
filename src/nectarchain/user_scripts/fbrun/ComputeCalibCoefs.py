@@ -1,20 +1,17 @@
-
-import sys
-from matplotlib import pyplot as plt
-import os
 import glob
+import os
+import sys
+
 import h5py
 import numpy as np
+from ctapipe_io_nectarcam import NectarCAMEventSource, constants
+from matplotlib import pyplot as plt
 
-
-from ctapipe_io_nectarcam import NectarCAMEventSource
-from ctapipe_io_nectarcam import constants
-
-plt.rcParams['figure.figsize'] = [13, 9]
+plt.rcParams["figure.figsize"] = [13, 9]
 
 ################################################################################
 
-FF_LIST_VALS = (0,2,32)
+FF_LIST_VALS = (0, 2, 32)
 
 NPREMAX = 4
 NPOSTMAX = 10
@@ -33,7 +30,6 @@ QRATIO_DEV = 0.1
 
 
 class ncam_wfs:
-
     def __init__(self):
         self.wfs_hg = []
         self.wfs_lg = []
@@ -52,7 +48,9 @@ class ncam_wfs:
             inputfile_reader = NectarCAMEventSource(input_url=file_name)
             for _ in enumerate(inputfile_reader):
                 nevents += 1
-        inputfile_reader = NectarCAMEventSource(input_url=file_name, max_events=nevents*10)
+        inputfile_reader = NectarCAMEventSource(
+            input_url=file_name, max_events=nevents * 10
+        )
 
         print("N events request = ", nevents)
 
@@ -69,7 +67,7 @@ class ncam_wfs:
         # self.wfs_evtid = np.zeros(nevents)
         self.trig_pattern = np.zeros((nevents, constants.N_PIXELS))
         self.pixels_ids = inputfile_reader.camera_config.expected_pixels_id
-        self.geometry = inputfile_reader.subarray.tel[0].camera
+        self.geometry = inputfile_reader.tel[0].subarray.camera
 
         self.wfs_evtid = []
         waveforms_hg = []
@@ -96,7 +94,9 @@ class ncam_wfs:
 
             trig_in = np.zeros((constants.N_PIXELS))
             for slice in range(4):
-                trig_in = np.logical_or(trig_in, event.nectarcam.tel[0].evt.trigger_pattern[slice])
+                trig_in = np.logical_or(
+                    trig_in, event.nectarcam.tel[0].evt.trigger_pattern[slice]
+                )
             self.trig_pattern[self.size] += trig_in
 
             # if ff_only and len(np.where(self.trig_pattern[self.size]>0)[0]) < 200: continue
@@ -115,6 +115,7 @@ class ncam_wfs:
         self.wfs_lg = np.array(waveforms_lg)
         self.wfs_evtid = np.array(self.wfs_evtid)
 
+
 ########################
 
 
@@ -127,8 +128,8 @@ def average_wfs(nevents, filename, ped_only, ff_only):
     average_hg = np.zeros((constants.N_PIXELS, constants.N_SAMPLES))
 
     for pix in wfs_ped.pixels_ids:
-        average_lg[pix] = sum(wfs_ped.wfs_lg[:, pix]*1./wfs_ped.size)
-        average_hg[pix] = sum(wfs_ped.wfs_hg[:, pix]*1./wfs_ped.size)
+        average_lg[pix] = sum(wfs_ped.wfs_lg[:, pix] * 1.0 / wfs_ped.size)
+        average_hg[pix] = sum(wfs_ped.wfs_hg[:, pix] * 1.0 / wfs_ped.size)
 
     return average_lg, average_hg
 
@@ -137,14 +138,14 @@ def subtract_average(wfs, average_hg, average_lg):
     wfs_sub_hg = []
     wfs_sub_lg = []
 
-    print('Subtracting average to waveforms')
-    print(f'Test {wfs.wfs_hg.shape} to {average_hg.shape}')
+    print("Subtracting average to waveforms")
+    print(f"Test {wfs.wfs_hg.shape} to {average_hg.shape}")
 
     for i in range(wfs.size):
         if i % 100 == 0:
             print(i)
-        wfs_sub_hg.append((wfs.wfs_hg[i, :, :]-average_hg[:]))
-        wfs_sub_lg.append((wfs.wfs_lg[i, :, :]-average_lg[:]))
+        wfs_sub_hg.append((wfs.wfs_hg[i, :, :] - average_hg[:]))
+        wfs_sub_lg.append((wfs.wfs_lg[i, :, :] - average_lg[:]))
 
     wfs_sub_hg = np.array(wfs_sub_hg)
     wfs_sub_lg = np.array(wfs_sub_lg)
@@ -157,35 +158,50 @@ def compute_charges(wfs_sub_hg, wfs_sub_lg, n_premax, n_postmax):
     charges_lg = []
     ws = n_premax
     we = n_postmax
-    print(f"Compute charges, from max in HG, params : n_premax = {ws}, n_postmax = {we}")
+    print(
+        f"Compute charges, from max in HG, params : n_premax = {ws}, n_postmax = {we}"
+    )
     for ev in range(len(wfs_sub_hg)):
         if ev % 100 == 0:
             print(ev)
         tmaxs = wfs_sub_hg[ev].argmax(axis=1)
-        charges_hg.append(np.array([wfs_sub_hg[ev, ii, max(0, pmax-ws):pmax+we].sum(axis=0) for ii, pmax in enumerate(tmaxs)]))
-        charges_lg.append(np.array([wfs_sub_lg[ev, ii, max(0, pmax-ws):pmax+we].sum(axis=0) for ii, pmax in enumerate(tmaxs)]))
+        charges_hg.append(
+            np.array(
+                [
+                    wfs_sub_hg[ev, ii, max(0, pmax - ws) : pmax + we].sum(axis=0)
+                    for ii, pmax in enumerate(tmaxs)
+                ]
+            )
+        )
+        charges_lg.append(
+            np.array(
+                [
+                    wfs_sub_lg[ev, ii, max(0, pmax - ws) : pmax + we].sum(axis=0)
+                    for ii, pmax in enumerate(tmaxs)
+                ]
+            )
+        )
 
     return np.array(charges_hg), np.array(charges_lg)
 
 
 def findrun(run_number):
-    basepath = os.environ['NECTARCAMDATA']
-    list = glob.glob(basepath+'**/*'+str(run_number)+'*.fits.fz', recursive=True)
-    fullnamesplit = list[0].split('.')
+    basepath = os.environ["NECTARCAMDATA"]
+    list = glob.glob(basepath + "**/*" + str(run_number) + "*.fits.fz", recursive=True)
+    fullnamesplit = list[0].split(".")
     print(f"Found file with name starting as: {fullnamesplit[0]}{fullnamesplit[1]}")
-    return fullnamesplit[0]+'.'+fullnamesplit[1]+'.000[0-9].fits.fz'
+    return fullnamesplit[0] + "." + fullnamesplit[1] + ".000[0-9].fits.fz"
 
 
 def findrun_firstfile(run_number):
-    basepath = os.environ['NECTARCAMDATA']
-    list = glob.glob(basepath+'**/*'+str(run_number)+'*.fits.fz', recursive=True)
-    fullnamesplit = list[0].split('.')
+    basepath = os.environ["NECTARCAMDATA"]
+    list = glob.glob(basepath + "**/*" + str(run_number) + "*.fits.fz", recursive=True)
+    fullnamesplit = list[0].split(".")
     print(f"Found file with name starting as: {fullnamesplit[0]}{fullnamesplit[1]}")
-    return fullnamesplit[0]+'.'+fullnamesplit[1]+'.0000.fits.fz'
+    return fullnamesplit[0] + "." + fullnamesplit[1] + ".0000.fits.fz"
 
 
 if __name__ == "__main__":
-
     # Open file and load waveforms
     max_events = int(sys.argv[1])  # 100
     run_number = sys.argv[2]
@@ -194,7 +210,7 @@ if __name__ == "__main__":
     ff_ttypes = int(sys.argv[5])
 
     if not ff_ttypes in FF_LIST_VALS:
-        raise ValueError("Possible FF trigger types are: "+str(FF_LIST_VALS))
+        raise ValueError("Possible FF trigger types are: " + str(FF_LIST_VALS))
 
     filename = findrun(run_number)  # 3105)
 
@@ -208,19 +224,23 @@ if __name__ == "__main__":
     wfs_sub_hg, wfs_sub_lg = subtract_average(wfs, average_hg, average_lg)
 
     # Load gain values
-    h5f = h5py.File('gains_run_{}.h5'.format(gain_run_number), 'r')
-    gains = h5f['gains'][:]
+    h5f = h5py.File("gains_run_{}.h5".format(gain_run_number), "r")
+    gains = h5f["gains"][:]
 
     # Compute charges
     charges_hg, charges_lg = compute_charges(wfs_sub_hg, wfs_sub_lg, NPREMAX, NPOSTMAX)
     print("Shapes: ", charges_hg.shape, charges_lg.shape)
     # HG/LG ratio
-    hglg = charges_hg/charges_lg
+    hglg = charges_hg / charges_lg
     hglgm = hglg.mean(0)  # np.ma.where(bpx_tot>0,hglg.mean(0),0)
 
     # Compute charges in pe
-    charges_hg_pe = np.array([charges_hg[:, ii] / gains[ii] for ii in range(constants.N_PIXELS)])
-    charges_lg_pe = np.array([charges_lg[:, ii] / gains[ii] * hglgm[ii] for ii in range(constants.N_PIXELS)])
+    charges_hg_pe = np.array(
+        [charges_hg[:, ii] / gains[ii] for ii in range(constants.N_PIXELS)]
+    )
+    charges_lg_pe = np.array(
+        [charges_lg[:, ii] / gains[ii] * hglgm[ii] for ii in range(constants.N_PIXELS)]
+    )
     mean_q_hg_pe = charges_hg_pe.mean(1)
     mean_q_lg_pe = charges_lg_pe.mean(1)
     charges_hg_pe = charges_hg_pe.T
@@ -264,38 +284,65 @@ if __name__ == "__main__":
         bpx_flag[ii] = bpx_flag[ii] | (1 << 2)
 
     # Bpx because charge ratio is too different from one
-    bpx_qratio = np.where(abs(charges_hg_pe.mean(0)/charges_lg_pe.mean(0)-1) > QRATIO_DEV)
+    bpx_qratio = np.where(
+        abs(charges_hg_pe.mean(0) / charges_lg_pe.mean(0) - 1) > QRATIO_DEV
+    )
     for ii in bpx_qratio:
         bpx_tot[ii] = 0
         bpx_flag[ii] = bpx_flag[ii] | (1 << 3)
 
     ############################################################################
     # Compute FF coefs, taking bpx into account
-    masked_charges_hg_pe = np.ma.array([np.ma.masked_where(bpx_tot == 0, charges_hg_pe[ii]) for ii in range(charges_hg_pe.shape[0])])  # np.ma.where(bpx_tot>0,charges_hg_pe,0)
-    masked_charges_lg_pe = np.ma.array([np.ma.masked_where(bpx_tot == 0, charges_lg_pe[ii]) for ii in range(charges_lg_pe.shape[0])])  # np.ma.where(bpx_tot>0,charges_lg_pe,0)
+    masked_charges_hg_pe = np.ma.array(
+        [
+            np.ma.masked_where(bpx_tot == 0, charges_hg_pe[ii])
+            for ii in range(charges_hg_pe.shape[0])
+        ]
+    )  # np.ma.where(bpx_tot>0,charges_hg_pe,0)
+    masked_charges_lg_pe = np.ma.array(
+        [
+            np.ma.masked_where(bpx_tot == 0, charges_lg_pe[ii])
+            for ii in range(charges_lg_pe.shape[0])
+        ]
+    )  # np.ma.where(bpx_tot>0,charges_lg_pe,0)
 
     masked_mean_hg_pe = np.ma.mean(masked_charges_hg_pe, axis=1)
     masked_mean_lg_pe = np.ma.mean(masked_charges_lg_pe, axis=1)
 
-    q_over_mean_hg = np.array([masked_charges_hg_pe[ii]/masked_mean_hg_pe[ii] for ii in range(len(masked_charges_hg_pe))])
-    masked_q_over_mean_hg = np.ma.array([np.ma.masked_where(bpx_tot == 0, q_over_mean_hg[ii]) for ii in range(q_over_mean_hg.shape[0])])
+    q_over_mean_hg = np.array(
+        [
+            masked_charges_hg_pe[ii] / masked_mean_hg_pe[ii]
+            for ii in range(len(masked_charges_hg_pe))
+        ]
+    )
+    masked_q_over_mean_hg = np.ma.array(
+        [
+            np.ma.masked_where(bpx_tot == 0, q_over_mean_hg[ii])
+            for ii in range(q_over_mean_hg.shape[0])
+        ]
+    )
 
     ff_coef = np.ma.mean(masked_q_over_mean_hg, axis=0)
-    ff_calib_coef = np.ma.divide(1., ff_coef)
+    ff_calib_coef = np.ma.divide(1.0, ff_coef)
 
     # ff_coef=np.array([ masked_charges_hg_pe[ii]/masked_mean_hg_pe[ii] for ii in range(len(masked_charges_hg_pe))]).mean(0)
     # ff_coef_lg=np.array([ masked_charges_lg_pe[ii]/masked_mean_lg_pe[ii] for ii in range(len(masked_charges_lg_pe))]).mean(0)
     # ff_calib_coef=np.ma.where(bpx_tot>0,1./ff_coef,1)
 
     # Write file
-    h5calibparams = h5py.File('calibparams_run{}_pedrun{}_gainrun{}.h5'.format(run_number, ped_run_number, gain_run_number), 'w')
-    h5calibparams.create_dataset('hglg', data=hglgm)
-    h5calibparams.create_dataset('ped_hg', data=average_hg)
-    h5calibparams.create_dataset('ped_lg', data=average_lg)
-    h5calibparams.create_dataset('bpx', data=bpx_tot)
-    h5calibparams.create_dataset('bpx_flag', data=bpx_flag)
-    h5calibparams.create_dataset('ff_calib_coefs', data=ff_calib_coef)
-    h5calibparams.create_dataset('gains', data=gains)
-    h5calibparams.create_dataset('mean_q_hg', data=mean_q_hg_pe)
-    h5calibparams.create_dataset('mean_q_lg', data=mean_q_lg_pe)
+    h5calibparams = h5py.File(
+        "calibparams_run{}_pedrun{}_gainrun{}.h5".format(
+            run_number, ped_run_number, gain_run_number
+        ),
+        "w",
+    )
+    h5calibparams.create_dataset("hglg", data=hglgm)
+    h5calibparams.create_dataset("ped_hg", data=average_hg)
+    h5calibparams.create_dataset("ped_lg", data=average_lg)
+    h5calibparams.create_dataset("bpx", data=bpx_tot)
+    h5calibparams.create_dataset("bpx_flag", data=bpx_flag)
+    h5calibparams.create_dataset("ff_calib_coefs", data=ff_calib_coef)
+    h5calibparams.create_dataset("gains", data=gains)
+    h5calibparams.create_dataset("mean_q_hg", data=mean_q_hg_pe)
+    h5calibparams.create_dataset("mean_q_lg", data=mean_q_lg_pe)
     h5calibparams.close()

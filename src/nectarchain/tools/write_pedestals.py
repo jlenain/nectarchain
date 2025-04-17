@@ -78,7 +78,7 @@ class PedestalHDF5Writer(Tool):
         for count, event in enumerate(self.eventsource):
             # fill pedestal monitoring container
             if self.pedestal.calculate_pedestals(event):
-                ped_data = event.mon.tel[self.pedestal.tel_id].pedestal
+                ped_data = event.tel[self.pedestal.tel_id].mon.pedestal
 
                 if write_config:
                     ped_data.meta["config"] = self.config
@@ -90,7 +90,7 @@ class PedestalHDF5Writer(Tool):
                 self.writer.write("pedestal", ped_data)
 
     def finish(self):
-        Provenance().add_output_file(self.output_file, role="mon.tel.pedestal")
+        Provenance().add_output_file(self.output_file, role="tel.mon.pedestal")
         self.writer.close()
 
 

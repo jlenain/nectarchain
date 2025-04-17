@@ -39,7 +39,7 @@ class MeanCameraDisplayHighLowGain(DQMSummary):
         self.counter_evt = 0
         self.counter_ped = 0
 
-        self.camera = Reader1.subarray.tel[0].camera.geometry.transform_to(
+        self.camera = Reader1.tel[0].subarray.camera.geometry.transform_to(
             EngineeringCameraFrame()
         )
 

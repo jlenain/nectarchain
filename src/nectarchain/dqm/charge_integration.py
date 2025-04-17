@@ -69,14 +69,14 @@ class ChargeIntegrationHighLowGain(DQMSummary):
         self.counter_evt = 0
         self.counter_ped = 0
 
-        self.camera = Reader1.subarray.tel[0].camera.geometry.transform_to(
+        self.camera = Reader1.tel[0].subarray.camera.geometry.transform_to(
             EngineeringCameraFrame()
         )
 
         self.cmap = "gnuplot2"
 
-        self.subarray = Reader1.subarray
-        subarray = Reader1.subarray
+        self.subarray = Reader1.tel[0].subarray
+        subarray = Reader1.tel[0].subarray
         subarray.tel[
             0
         ].camera.readout = ctapipe.instrument.camera.readout.CameraReadout.from_name(
@@ -301,7 +301,7 @@ class ChargeIntegrationHighLowGain(DQMSummary):
         if self.counter_evt > 0:
             fig1, disp = plt.subplots()
             disp = CameraDisplay(self.camera[~self.pixelBADplot[0]])
-            # disp = CameraDisplay(self.subarray.tels[0].camera)
+            # disp = CameraDisplay(self.tels[0].subarray.camera)
             disp.image = self.image_all_average
             disp.cmap = plt.cm.coolwarm
             disp.axes.text(
