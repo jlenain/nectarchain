@@ -29,6 +29,8 @@ def get_rundata(src, runid):
 
 def make_camera_displays(db, source, runid):
     displays = collections.defaultdict(dict)
+    toto = displays
+    displays = toto
     for parentkey in db[runid].keys():
         if not re.match(TEST_PATTERN, parentkey):
             for childkey in db[runid][parentkey].keys():
