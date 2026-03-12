@@ -48,6 +48,18 @@ jobs:
             ctapipe-version: "v0.29"
             install-method: "pip"
             extra-args: ["codecov"]
+          - os: "ubuntu-latest"
+            python-version: "3.12"
+            ctapipe-version: "v0.29"
+            install-method: "mamba"
+          - os: "ubuntu-latest"
+            python-version: "3.13"
+            ctapipe-version: "v0.29"
+            install-method: "mamba"
+          - os: "ubuntu-latest"
+            python-version: "3.14"
+            ctapipe-version: "v0.29"
+            install-method: "mamba"
           # macos 15 image, x86-based
           - os: "macos-15-intel"
             python-version: "3.11"
