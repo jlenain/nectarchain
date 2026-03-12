@@ -98,7 +98,7 @@ intersphinx_mapping = {
     "astropy": ("https://docs.astropy.org/en/latest/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "traitlets": ("https://traitlets.readthedocs.io/en/stable/", None),
-    "ctapipe": ("https://ctapipe.readthedocs.io/en/v0.24.0/", None),
+    "ctapipe": ("https://ctapipe.readthedocs.io/en/v0.29.0/", None),
 }
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
